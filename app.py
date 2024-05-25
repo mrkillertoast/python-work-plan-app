@@ -1,26 +1,26 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, abort, session
+from flask import Flask, render_template, request, redirect, url_for, abort, session, current_app
 from werkzeug.utils import secure_filename
 
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
+from extractor import Extractor
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/calendar"]
-
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
 app.config['UPLOAD_EXTENSIONS'] = ['.pdf', '.PDF']
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['SECRET_KEY'] = 'SomeVerySecretKey'
+app.config['SCOPES'] = ["https://www.googleapis.com/auth/calendar"]
+
+
+def get_extractor() -> Extractor:
+    if not hasattr(current_app, 'extractor'):
+        current_app.extractor = Extractor(app.config['SCOPES'])
+    return current_app.extractor
 
 
 @app.route('/')
 def index():
-    print('tst')
     return render_template('index.html')
 
 
