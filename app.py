@@ -48,6 +48,7 @@ def upload_index():
 @app.route('/upload', methods=['POST'])
 def upload():
     selected_calendar = request.form.get('calendar')
+    person_name = request.form.get('person_name')
     uploaded_file = request.files['work_plan']
     filename = secure_filename(uploaded_file.filename)
     if filename != '':
@@ -55,6 +56,9 @@ def upload():
         if file_ext not in app.config['UPLOAD_EXTENSIONS']:
             abort(400)
         uploaded_file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'work_plan.pdf'))
+
+    extractor = get_extractor()
+    extractor.process_data(person_name)
 
     return redirect(url_for('upload'))
 
