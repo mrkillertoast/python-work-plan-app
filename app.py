@@ -13,7 +13,7 @@ SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
-app.config['UPLOAD_EXTENSIONS'] = ['.pdf']
+app.config['UPLOAD_EXTENSIONS'] = ['.pdf', '.PDF']
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['SECRET_KEY'] = 'SomeVerySecretKey'
 
@@ -47,16 +47,21 @@ def login():
         service = build("calendar", "v3", credentials=creds)
 
         calendars_result = service.calendarList().list().execute()
-        calendars = calendars_result.get('items', [])
+        all_calendars = calendars_result.get('items', [])
 
-        if not calendars:
+        if not all_calendars:
             print('No calendars found.')
         else:
-            session['calendars'] = calendars
+            valid_calendars = []
+            for calendar in all_calendars:
+                if calendar.get('accessRole') == 'owner':
+                    valid_calendars.append(calendar)
+
+                session['calendars'] = valid_calendars
             return redirect(url_for('upload'))
 
     except HttpError as e:
-        print(e)
+        abort(404, e)
 
 
 @app.route('/upload')
@@ -67,6 +72,7 @@ def upload_index():
 
 @app.route('/upload', methods=['POST'])
 def upload():
+    selected_calendar = request.form.get('calendar')
     uploaded_file = request.files['work_plan']
     filename = secure_filename(uploaded_file.filename)
     if filename != '':

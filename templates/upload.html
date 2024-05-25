@@ -11,9 +11,9 @@
             <p>chose your plan to upload:</p>
             <form method="POST" action="" enctype="multipart/form-data">
                 {% for calendar in calendars %}
-                    <input type="radio" id="html" name="fav_language" value=calendar.id>
-                    <label for="html">{{ calendar.summary }}</label><br>
-                {%  endfor %}
+                    <input type="radio" id="{{ calendar.id }}" name="calendar" value="{{ calendar }}">
+                    <label for="{{ calendar.id }}">{{ calendar.summary }}</label><br>
+                {% endfor %}
                 <p><input type="file" name="work_plan" accept="application/pdf"></p>
                 <p><input type="submit" value="Submit"></p>
             </form>
