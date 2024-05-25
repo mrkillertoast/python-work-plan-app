@@ -1,4 +1,4 @@
-import tabula
+import tabula as tb
 import pandas as pd
 from datetime import datetime
 
@@ -28,8 +28,8 @@ class Extractor:
         extracted_shifts = []
 
         with open("uploads/work_plan.pdf", 'rb') as file:
-            pdf_data = tabula.read_pdf(file, pages=1, stream=True)
-            pdf_data[0].to_csv("/uploads/output.csv", header=False, index=False)
+            pdf_data = tb.read_pdf(file, pages=1, stream=True)
+            pdf_data[0].to_csv("uploads/output.csv", header=False, index=False)
 
             df = pd.read_csv("uploads/output.csv", header=None)
 
@@ -92,7 +92,7 @@ class Extractor:
         Function to create the shifts date object.
         :param shift_data: date for the shift
         :param dates_data: all dates for the month
-        :param year_data: month and year information
+        :param year_data:  and year information
         :return:
         """
         month_dict = {
@@ -134,33 +134,37 @@ class Extractor:
 
         return shift_dates
 
-    def create_google_events(self, events):
+    def create_google_events(self, events, calendar_id):
         """
         Creates all the events for every shift in the Work Plan.
         Uses the Google Calendar API to create the events.
+        :param calendar_id:
         :param events: list of shift information
+        """
+
         """
         creds = None
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
-        if os.path.exists("token.json"):
-            creds = Credentials.from_authorized_user_file("token.json", self.scopes)
+        if os.path.exists("credentials/token.json"):
+            creds = Credentials.from_authorized_user_file("credentials/token.json", self.scopes)
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    "credentials.json", self.scopes
+                    "credentials/credentials.json", self.scopes
                 )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open("token.json", "w") as token:
+            with open("credentials/token.json", "w") as token:
                 token.write(creds.to_json())
+        """
 
         try:
-            service = build("calendar", "v3", credentials=creds)
+            service = build("calendar", "v3", credentials=self.creds)
 
             for entry in events:
                 event = {
@@ -175,7 +179,7 @@ class Extractor:
                     }
                 }
                 event = service.events().insert(
-                    calendarId='e5edc98f9ef42baf9cc546b727294d623bdf087e171ff3abfb84b4f4d661750c@group.calendar.google.com',
+                    calendarId=calendar_id,
                     # Insert CalendarID
                     body=event).execute()
                 print('Event created: %s' % (event.get('htmlLink')))
@@ -194,7 +198,7 @@ class Extractor:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials/credentials.json', self.scopes
                 )
-                creds = flow.run_local_server(port=0)
+                self.creds = flow.run_local_server(port=0)
 
         with open('credentials/token.json', 'w') as token:
             token.write(self.creds.to_json())
@@ -220,3 +224,8 @@ class Extractor:
 
         except HttpError as e:
             return e
+
+    def process_data(self, name, calendar_id):
+        shifts, month_year, dates = self.extract_shifts(name)
+        events_data = self.generate_shifts_date_object(shifts, dates, month_year)
+        self.create_google_events(events_data, calendar_id)

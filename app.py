@@ -48,6 +48,7 @@ def upload_index():
 @app.route('/upload', methods=['POST'])
 def upload():
     selected_calendar = request.form.get('calendar')
+    print(selected_calendar)
     person_name = request.form.get('person_name')
     uploaded_file = request.files['work_plan']
     filename = secure_filename(uploaded_file.filename)
@@ -58,7 +59,7 @@ def upload():
         uploaded_file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'work_plan.pdf'))
 
     extractor = get_extractor()
-    extractor.process_data(person_name)
+    extractor.process_data(person_name, selected_calendar)
 
     return redirect(url_for('upload'))
 

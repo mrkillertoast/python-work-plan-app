@@ -12,7 +12,7 @@
             <p>Please enter your Name as it is on the Plan:</p>
                 <input type="text" name="person_name" maxlength="50"><br>
                 {% for calendar in calendars %}
-                    <input type="radio" id="{{ calendar.id }}" name="calendar" value="{{ calendar }}">
+                    <input type="radio" id="{{ calendar.id }}" name="calendar" value="{{ calendar['id'] }}">
                     <label for="{{ calendar.id }}">{{ calendar.summary }}</label><br>
                 {% endfor %}
             <p>chose your plan to upload:</p>
