@@ -2,3 +2,17 @@ body {
     margin: 0;
     font-family: sans-serif;
 }
+
+.center {
+    text-align: center;
+}
+
+.uploader{
+    border: 1px solid darkslategrey;
+    border-radius: 2rem;
+    padding: 1rem;
+}
+
+.align-left{
+    text-align: left;
+}
