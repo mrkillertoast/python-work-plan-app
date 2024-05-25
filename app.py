@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, abort, ses
 from werkzeug.utils import secure_filename
 
 from extractor import Extractor
+from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
 app = Flask(__name__)
@@ -26,42 +27,16 @@ def index():
 
 @app.route('/login')
 def login():
-    creds = None
+    extractor = get_extractor()
+    logged_in = extractor.check_login()
 
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+    if logged_in:
+        res = extractor.get_calendars()
+        if res == ValueError or res == HttpError:
+            abort(400, res)
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES
-            )
-            creds = flow.run_local_server(port=0)
-
-    with open('token.json', 'w') as token:
-        token.write(creds.to_json())
-
-    try:
-        service = build("calendar", "v3", credentials=creds)
-
-        calendars_result = service.calendarList().list().execute()
-        all_calendars = calendars_result.get('items', [])
-
-        if not all_calendars:
-            print('No calendars found.')
-        else:
-            valid_calendars = []
-            for calendar in all_calendars:
-                if calendar.get('accessRole') == 'owner':
-                    valid_calendars.append(calendar)
-
-                session['calendars'] = valid_calendars
+            session['calendars'] = res
             return redirect(url_for('upload'))
-
-    except HttpError as e:
-        abort(404, e)
 
 
 @app.route('/upload')

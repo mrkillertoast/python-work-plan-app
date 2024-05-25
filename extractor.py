@@ -14,6 +14,7 @@ from googleapiclient.errors import HttpError
 class Extractor:
     def __init__(self, scopes):
         self.scopes = scopes
+        self.creds = None
 
     @staticmethod
     def extract_shifts(name):
@@ -181,3 +182,41 @@ class Extractor:
 
         except HttpError as error:
             print(f"An error occurred: {error}")
+
+    def check_login(self):
+        if os.path.exists('credentials/token.json'):
+            self.creds = Credentials.from_authorized_user_file('credentials/token.json', self.scopes)
+
+        if not self.creds or not self.creds.valid:
+            if self.creds and self.creds.expired and self.creds.refresh_token:
+                self.creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    'credentials/credentials.json', self.scopes
+                )
+                creds = flow.run_local_server(port=0)
+
+        with open('credentials/token.json', 'w') as token:
+            token.write(self.creds.to_json())
+
+        return True
+
+    def get_calendars(self):
+        try:
+            service = build("calendar", "v3", credentials=self.creds)
+            calendars_result = service.calendarList().list().execute()
+            all_calendars = calendars_result.get('items', [])
+
+            if not all_calendars:
+                e = ValueError('no Values')
+                return e
+            else:
+                valid_calendars = []
+                for calendar in all_calendars:
+                    if calendar.get('accessRole') == 'owner':
+                        valid_calendars.append(calendar)
+
+                return valid_calendars
+
+        except HttpError as e:
+            return e
