@@ -16,6 +16,7 @@ class Extractor:
     def __init__(self, scopes):
         self.scopes = scopes
         self.creds = None
+        self.names = []
 
     @staticmethod
     def extract_shifts(name):
@@ -28,18 +29,15 @@ class Extractor:
             """
         extracted_shifts = []
 
-        with open("uploads/work_plan.pdf", 'rb') as file:
-            pdf_data = tb.read_pdf(file, pages=1, stream=True)
-            pdf_data[0].to_csv("uploads/output.csv", header=False, index=False)
+        df = pd.read_csv("uploads/output.csv", header=None)
 
-            df = pd.read_csv("uploads/output.csv", header=None)
+        month = df[0][0]
+        dates_array = df.iloc[1]
 
-            month = df[0][0]
-            dates_array = df.iloc[1]
+        for index, row in df.iterrows():
+            if row[0] == name:
+                extracted_shifts.append(row)
 
-            for index, row in df.iterrows():
-                if row[0] == name:
-                    extracted_shifts.append(row)
         return extracted_shifts, month, dates_array
 
     @staticmethod
@@ -163,6 +161,7 @@ class Extractor:
             with open("credentials/token.json", "w") as token:
                 token.write(creds.to_json())
         """
+        print(self.creds)
 
         try:
             service = build("calendar", "v3", credentials=self.creds)
@@ -197,11 +196,13 @@ class Extractor:
                 try:
                     self.creds.refresh(Request())
                 except RefreshError:
-                    os.remove('credentials/token.json')
+                    #os.remove('credentials/token.json')
                     flow = InstalledAppFlow.from_client_secrets_file(
                         "credentials/credentials.json", self.scopes
                     )
                     self.creds = flow.run_local_server(port=0)
+                except Exception as e:
+                    return e
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials/credentials.json', self.scopes
@@ -211,6 +212,7 @@ class Extractor:
         with open('credentials/token.json', 'w') as token:
             token.write(self.creds.to_json())
 
+        print(self.creds)
         return True
 
     def get_calendars(self):
@@ -237,3 +239,30 @@ class Extractor:
         shifts, month_year, dates = self.extract_shifts(name)
         events_data = self.generate_shifts_date_object(shifts, dates, month_year)
         self.create_google_events(events_data, calendar_id)
+        print('Google Calendar Generation Complete')
+
+    def extract_data_and_names(self):
+        """
+            Extracts shifts, the concert month, and the working dates from the Work Plan PDF.
+            First extract data from pdf and store them in a csv file.
+            After loading it with Pandas to manipulate the data.
+            :return: the extracted shifts, the concert month, and the month dates.
+            """
+        extracted_shifts = []
+
+        with open("uploads/work_plan.pdf", 'rb') as file:
+            pdf_data = tb.read_pdf(file, pages=1, stream=True)
+            pdf_data[0].to_csv("uploads/output.csv", header=False, index=False)
+
+            df = pd.read_csv("uploads/output.csv", header=None)
+
+            self.names = []
+            num_row = 0
+
+            for index, row in df.iterrows():
+                if num_row > 2:
+                    if pd.notnull(row[0]) or pd.notnull(row[len(row) - 1]):
+                        extracted_shifts.append(row)
+                        self.names.append(row[0])
+
+                num_row += 1

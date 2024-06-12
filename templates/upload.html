@@ -9,13 +9,7 @@
         <h1>Upload your work Plan, to add it to your Calendar</h1>
         <div class="file-selection align-left">
             <form method="POST" action="" enctype="multipart/form-data">
-            <p>Please enter your Name as it is on the Plan:</p>
-                <input type="text" name="person_name" maxlength="50"><br>
-                {% for calendar in calendars %}
-                    <input type="radio" id="{{ calendar.id }}" name="calendar" value="{{ calendar['id'] }}">
-                    <label for="{{ calendar.id }}">{{ calendar.summary }}</label><br>
-                {% endfor %}
-            <p>chose your plan to upload:</p>
+                <p>chose your plan to upload:</p>
                 <p><input type="file" name="work_plan" accept="application/pdf"></p>
                 <p><input type="submit" value="Submit"></p>
             </form>

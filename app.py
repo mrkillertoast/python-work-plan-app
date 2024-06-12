@@ -30,6 +30,9 @@ def login():
     extractor = get_extractor()
     logged_in = extractor.check_login()
 
+    if type(logged_in).isException:
+        return render_template('login.html', error=logged_in)
+
     if logged_in:
         res = extractor.get_calendars()
         if res == ValueError or res == HttpError:
@@ -47,9 +50,6 @@ def upload_index():
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    selected_calendar = request.form.get('calendar')
-    print(selected_calendar)
-    person_name = request.form.get('person_name')
     uploaded_file = request.files['work_plan']
     filename = secure_filename(uploaded_file.filename)
     if filename != '':
@@ -59,9 +59,31 @@ def upload():
         uploaded_file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'work_plan.pdf'))
 
     extractor = get_extractor()
-    extractor.process_data(person_name, selected_calendar)
+    extractor.extract_data_and_names()
 
-    return redirect(url_for('upload'))
+    return redirect(url_for('selection'))
+
+
+@app.route('/selection')
+def selection():
+    calendars = session['calendars']
+
+    extractor = get_extractor()
+    names = extractor.names
+
+    return render_template('selection.html', calendars=calendars, names=names)
+
+
+@app.route('/selection', methods=['POST'])
+def handle_selection():
+    selected_name = request.form['person_name']
+    selected_calendar = request.form['calendar']
+
+    if selected_name and selected_calendar:
+        extractor = get_extractor()
+        extractor.process_data(selected_name, selected_calendar)
+
+    return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
