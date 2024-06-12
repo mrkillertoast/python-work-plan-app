@@ -161,8 +161,6 @@ class Extractor:
             with open("credentials/token.json", "w") as token:
                 token.write(creds.to_json())
         """
-        print(self.creds)
-
         try:
             service = build("calendar", "v3", credentials=self.creds)
 
@@ -196,7 +194,7 @@ class Extractor:
                 try:
                     self.creds.refresh(Request())
                 except RefreshError:
-                    #os.remove('credentials/token.json')
+                    # os.remove('credentials/token.json')
                     flow = InstalledAppFlow.from_client_secrets_file(
                         "credentials/credentials.json", self.scopes
                     )
@@ -212,7 +210,6 @@ class Extractor:
         with open('credentials/token.json', 'w') as token:
             token.write(self.creds.to_json())
 
-        print(self.creds)
         return True
 
     def get_calendars(self):
@@ -239,7 +236,7 @@ class Extractor:
         shifts, month_year, dates = self.extract_shifts(name)
         events_data = self.generate_shifts_date_object(shifts, dates, month_year)
         self.create_google_events(events_data, calendar_id)
-        print('Google Calendar Generation Complete')
+        # TODO: ADD Error Handling on login fialed
 
     def extract_data_and_names(self):
         """

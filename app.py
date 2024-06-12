@@ -30,7 +30,7 @@ def login():
     extractor = get_extractor()
     logged_in = extractor.check_login()
 
-    if type(logged_in).isException:
+    if type(logged_in) == Exception:
         return render_template('login.html', error=logged_in)
 
     if logged_in:
@@ -78,6 +78,7 @@ def selection():
 def handle_selection():
     selected_name = request.form['person_name']
     selected_calendar = request.form['calendar']
+    # TODO: Make sure selection doesn't get transmitted multiple times because of weird user navigation
 
     if selected_name and selected_calendar:
         extractor = get_extractor()
