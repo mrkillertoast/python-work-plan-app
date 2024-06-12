@@ -4,6 +4,7 @@ from datetime import datetime
 
 import os.path
 
+from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -193,7 +194,14 @@ class Extractor:
 
         if not self.creds or not self.creds.valid:
             if self.creds and self.creds.expired and self.creds.refresh_token:
-                self.creds.refresh(Request())
+                try:
+                    self.creds.refresh(Request())
+                except RefreshError:
+                    os.remove('credentials/token.json')
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        "credentials/credentials.json", self.scopes
+                    )
+                    self.creds = flow.run_local_server(port=0)
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials/credentials.json', self.scopes
